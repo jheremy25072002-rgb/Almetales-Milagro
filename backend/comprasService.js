@@ -104,16 +104,9 @@ export async function leerOpcionesReporte() {
      WHERE material IS NOT NULL AND TRIM(material) <> ''
      ORDER BY material ASC`
   );
-  const [journals] = await pool.execute(
-    `SELECT DISTINCT jornada
-     FROM tbl_consolidado_compras
-     WHERE UPPER(TRIM(jornada)) IN ('DIURNA', 'NOCTURNA')
-     ORDER BY jornada ASC`
-  );
-
   return {
     materiales: materials.map((row) => cleanText(row.material)).filter(Boolean),
-    jornadas: journals.map((row) => cleanText(row.jornada)).filter(Boolean)
+    jornadas: ['DIURNA']
   };
 }
 
@@ -121,7 +114,7 @@ export async function generarReporteCompras(filters = {}) {
   const desde = normalizeDateTime(filters.desde);
   const hasta = normalizeDateTime(filters.hasta);
   const material = cleanText(filters.material);
-  const jornada = cleanText(filters.jornada);
+  const jornada = normalizeJornada(filters.jornada);
 
   if (!desde || !hasta) {
     throw new Error('Debes enviar desde y hasta con formato YYYY-MM-DDTHH:mm o YYYY-MM-DD HH:mm:ss.');
@@ -224,7 +217,7 @@ function normalizarCompra(row, index) {
   const fecha = toDateOnly(row.fecha);
   const hora = toTimeOnly(row.hora_registro_salida);
   const material = cleanText(row.material);
-  const jornada = cleanText(row.jornada);
+  const jornada = normalizeJornada(row.jornada);
 
   return {
     id: stableId([fecha, hora, material, jornada, index]),
@@ -251,6 +244,12 @@ function toTimeOnly(value) {
 
 function cleanText(value) {
   return String(value || '').trim();
+}
+
+function normalizeJornada(value) {
+  const text = cleanText(value);
+  if (!text) return 'DIURNA';
+  return 'DIURNA';
 }
 
 function roundMoney(value) {

@@ -17,8 +17,9 @@ const money = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD
 const denominations = [20, 10, 5, 1, 0.5, 0.25, 0.1, 0.05];
 const defaultData = { ownerPin: '1234', employeePin: 'empleado', shifts: [], payrollAdjustments: [], employees: [], materialAudits: [], updatedAt: '' };
 const defaultCompras = { fecha: '', totalDiario: 0, totalPesoKg: 0, cantidadRegistros: 0, porJornada: {}, compras: [], opciones: null, actualizadoEn: '' };
-const defaultReportOptions = { materiales: [], jornadas: ['DIURNA', 'NOCTURNA'] };
-const shiftOptions = ['Turno dia', 'Turno noche'];
+const defaultReportOptions = { materiales: [], jornadas: ['DIURNA'] };
+const DAY_SHIFT = 'Turno dia';
+const shiftOptions = [DAY_SHIFT];
 const incomeTypes = [
   { value: 'general', label: 'Ingreso general' },
   { value: 'ventas', label: 'Ventas' }
@@ -36,7 +37,7 @@ const payrollAdjustmentTypes = [
   { value: 'extra', label: 'Extra', sign: 1 },
   { value: 'descuento', label: 'Descuento', sign: -1 }
 ];
-const companyInfo = { name: 'ALMETALES', ruc: '0962596649001' };
+const companyInfo = { name: 'ALMETALES MILAGRO', ruc: '0962596649001' };
 
 function App() {
   const [data, setData] = useState(defaultData);
@@ -152,10 +153,10 @@ function App() {
     [dayItems, ownerShiftFilter]
   );
   const pageCopy = {
-    employee: ['Registrar caja del turno', 'Registra ingresos, gastos y cierre de efectivo del turno.'],
+    employee: ['Registrar caja diaria', 'Registra ingresos, gastos y cierre de efectivo de la jornada diurna.'],
     owner: ['Cuadrar Caja', 'Cuadres, diferencias, reportes y edicion completa.'],
     salaries: ['Sueldo Empleados', 'Vales, bonos, extras y descuentos por rango de fechas.'],
-    reports: ['Reporte General', 'Consulta compras por material, jornada, dia completo o rangos de fecha y hora.'],
+    reports: ['Reporte General', 'Consulta compras por material, dia completo o rangos de fecha y hora.'],
     materials: ['Arqueo Materiales', 'Compara inventario, recuperacion y peso reportado por recolector.'],
     utilities: ['Utilidades', 'Compara compras pagadas, entregas vendidas y utilidad por material.'],
     settings: ['Configuracion', 'Claves, respaldo, importacion y limpieza de datos.']
@@ -193,11 +194,11 @@ function App() {
 
   async function openCashBox(form) {
     const date = form.date || today();
-    const shiftName = form.shiftName;
+    const shiftName = normalizeShiftName(form.shiftName);
     const existing = findShift(data.shifts, date, shiftName);
 
     if (existing?.status === 'cerrado') {
-      alert('Ese turno ya esta cerrado. Para revisarlo o corregirlo entra en Revision dueno.');
+      alert('La caja diaria ya esta cerrada. Para revisarla o corregirla entra en Revision dueno.');
       return;
     }
 
@@ -257,7 +258,7 @@ function App() {
     const shift = {
       id,
       date: form.date,
-      shiftName: form.shiftName,
+      shiftName: normalizeShiftName(form.shiftName),
       employeeName: form.employeeName.trim(),
       openingCash: ownerUnlocked ? num(form.openingCash) : num(existing?.openingCash ?? form.openingCash ?? autoOpeningCash(data.shifts, form.date, form.shiftName)),
       purchaseTotal,
@@ -388,7 +389,7 @@ function App() {
   }
 
   async function deleteShift(id) {
-    if (!ownerUnlocked || !confirm('Eliminar este cierre de turno?')) return;
+    if (!ownerUnlocked || !confirm('Eliminar este cierre de caja?')) return;
     await persist({ ...data, shifts: data.shifts.filter((item) => item.id !== id) });
   }
 
@@ -455,15 +456,15 @@ function App() {
     <div className="app">
       <aside>
         <div className="brand">
-          <img className="brand-logo" src={logoUrl} alt="ALMETALES" />
+          <img className="brand-logo" src={logoUrl} alt="ALMETALES MILAGRO" />
           <div>
-            <h1>ALMETALES</h1>
-            <span>Turno dia y turno noche</span>
+            <h1>ALMETALES MILAGRO</h1>
+            <span>Jornada diurna</span>
           </div>
         </div>
 
         <nav className="nav" aria-label="Navegacion principal">
-          <button className={activeView === 'employee' ? 'active' : ''} onClick={() => setActiveView('employee')}>Registrar turno</button>
+          <button className={activeView === 'employee' ? 'active' : ''} onClick={() => setActiveView('employee')}>Registrar caja</button>
           {ownerUnlocked && <button className={activeView === 'owner' ? 'active' : ''} onClick={() => setActiveView('owner')}>Cuadrar Caja</button>}
           {ownerUnlocked && <button className={activeView === 'salaries' ? 'active' : ''} onClick={() => setActiveView('salaries')}>Sueldo Empleados</button>}
           {ownerUnlocked && <button className={activeView === 'reports' ? 'active' : ''} onClick={() => setActiveView('reports')}>Reporte General</button>}
@@ -504,14 +505,14 @@ function App() {
             onUpdateOpeningCash={updateOpeningCash}
             onOpenShift={() => {
               if (!activeCashBox) {
-                alert('Primero abre una caja para DIURNA o NOCTURNA.');
+                alert('Primero abre la caja de la jornada DIURNA.');
                 return;
               }
               setShiftModal(openShiftForm(data.shifts, activeCashBox.date, null, ownerUnlocked, session.name, comprasDiarias, activeCashBox.shiftName));
             }}
             onOpenMovement={(type) => {
               if (!activeCashBox) {
-                alert('Primero abre una caja para DIURNA o NOCTURNA.');
+                alert('Primero abre la caja de la jornada DIURNA.');
                 return;
               }
               setMovementModal(openMovementForm(data.shifts, activeCashBox.date, null, type, session.name, activeCashBox.shiftName, true));
@@ -615,9 +616,9 @@ function Login({ data, loading, syncError, onLogin }) {
     <main className="login-page">
       <form className="login-card" onSubmit={submit}>
         <div className="brand login-brand">
-          <img className="brand-logo" src={logoUrl} alt="ALMETALES" />
+          <img className="brand-logo" src={logoUrl} alt="ALMETALES MILAGRO" />
           <div>
-            <h1>ALMETALES</h1>
+            <h1>ALMETALES MILAGRO</h1>
             <span>Sincronizado con Firestore</span>
           </div>
         </div>
@@ -676,7 +677,7 @@ function EmployeeView({ shifts, activeCashBox, deleteUnlocked, onOpenCashBox, on
             <div>
               <span>Saldo inicial recibido</span>
               <strong>{money.format(num(currentShift?.openingCash))}</strong>
-              <small>Fecha {activeCashBox.date}. Viene del efectivo dejado por el turno anterior.</small>
+              <small>Fecha {activeCashBox.date}. Viene del efectivo dejado por el dia anterior.</small>
             </div>
             <button className="secondary" type="button" onClick={requestOpeningCashUpdate}>Corregir con clave</button>
           </div>
@@ -689,10 +690,10 @@ function EmployeeView({ shifts, activeCashBox, deleteUnlocked, onOpenCashBox, on
         </>
       )}
       <div className="panel span-12">
-        <div className="section-title"><h3>Operacion del turno</h3></div>
+        <div className="section-title"><h3>Operacion diaria</h3></div>
         <table>
           <tbody>
-            <tr><td>Turnos</td><td>Dia / Noche</td></tr>
+            <tr><td>Jornada</td><td>DIURNA</td></tr>
             <tr><td>Moneda</td><td>Dolares</td></tr>
             <tr><td>Material</td><td>Se toma del reporte del sistema de pesaje</td></tr>
           </tbody>
@@ -709,7 +710,7 @@ function EmployeeView({ shifts, activeCashBox, deleteUnlocked, onOpenCashBox, on
 
 function CashBoxStarter({ onOpen }) {
   const [date, setDate] = useState(today());
-  const [shiftName, setShiftName] = useState('Turno dia');
+  const shiftName = DAY_SHIFT;
 
   return (
     <form className="form-grid cash-starter" onSubmit={(event) => { event.preventDefault(); onOpen({ date, shiftName }); }}>
@@ -717,10 +718,7 @@ function CashBoxStarter({ onOpen }) {
         <input type="date" value={date} onChange={(event) => setDate(event.target.value)} required />
       </label>
       <label className="span-field-4">Jornada
-        <select value={shiftName} onChange={(event) => setShiftName(event.target.value)} required>
-          <option value="Turno dia">DIURNA</option>
-          <option value="Turno noche">NOCTURNA</option>
-        </select>
+        <input value="DIURNA" readOnly />
       </label>
       <div className="span-field-4 cash-starter-action">
         <button className="primary">Abrir caja</button>
@@ -744,7 +742,7 @@ function MovementBox({ title, total, status, movements, emptyText, canDelete, on
         <div className="table-wrap">
           <table>
             <thead>
-              <tr><th>Turno</th><th>Tipo</th><th>Motivo</th><th>Monto</th><th>Registra</th>{canDelete && <th>Accion</th>}</tr>
+              <tr><th>Jornada</th><th>Tipo</th><th>Motivo</th><th>Monto</th><th>Registra</th>{canDelete && <th>Accion</th>}</tr>
             </thead>
             <tbody>
               {movements.map((movement) => (
@@ -789,27 +787,21 @@ function OwnerView({ shifts, compras, activeDate, shiftFilter, onDateChange, onS
           <label className="span-field-4">Fecha
             <input type="date" value={activeDate} onChange={(event) => onDateChange(event.target.value)} />
           </label>
-          <label className="span-field-4">Jornada
-            <select value={shiftFilter} onChange={(event) => onShiftFilterChange(event.target.value)}>
-              <option value="">Todas las jornadas</option>
-              <option value="Turno dia">DIURNA</option>
-              <option value="Turno noche">NOCTURNA</option>
-            </select>
-          </label>
+          <label className="span-field-4">Jornada<input value="DIURNA" readOnly /></label>
           <div className="span-field-4 filter-summary">
-            <span className="status info">{shiftFilter ? shiftShortName(shiftFilter) : 'Dia completo'}</span>
+            <span className="status info">Dia completo</span>
           </div>
         </div>
       </div>
       <Metric title="Compras reportadas" value={money.format(fromCents(purchases))} note={compras.cantidadRegistros ? `${compras.cantidadRegistros} registros sincronizados` : 'Sistema de pesaje'} />
       <Metric title="Ingresos totales" value={money.format(fromCents(incomes))} note="Ventas y entradas a caja" />
-      <Metric title="Gastos y retiros" value={money.format(fromCents(expenses))} note="Registrados por turno" />
+      <Metric title="Gastos y retiros" value={money.format(fromCents(expenses))} note="Registrados en la jornada" />
       <Metric title="Vales empleados" value={money.format(fromCents(vales))} note="Adelantos de sueldo" />
       <Metric title="Efectivo dejado" value={money.format(fromCents(left))} note="Contado por denominaciones" />
       <Metric title="Diferencia neta" value={money.format(fromCents(diff))} note={shifts.length ? diffText(diff) : 'Sin cierres'} />
       <div className="panel span-12 private">
         <div className="section-title">
-          <h3>Resumen de caja por turno</h3>
+          <h3>Resumen de caja diaria</h3>
           <div className="toolbar no-print">
             <button className="primary" onClick={() => downloadOwnerSummaryImage({ shifts, compras, activeDate, shiftFilter })}>Imagen para jefe</button>
             <button className="secondary" onClick={() => onOpenMovement(null)}>Agregar movimiento</button>
@@ -820,7 +812,7 @@ function OwnerView({ shifts, compras, activeDate, shiftFilter, onDateChange, onS
           <div className="table-wrap">
             <table>
               <thead>
-                <tr><th>Turno</th><th>Empleado</th><th>Inicial</th><th>Ingresos</th><th>Gastos</th><th>Vales</th><th>Retiros</th><th>Compras</th><th>Esperado</th><th>Dejado</th><th>Diferencia</th><th>Accion</th></tr>
+                <tr><th>Jornada</th><th>Empleado</th><th>Inicial</th><th>Ingresos</th><th>Gastos</th><th>Vales</th><th>Retiros</th><th>Compras</th><th>Esperado</th><th>Dejado</th><th>Diferencia</th><th>Accion</th></tr>
               </thead>
               <tbody>
                 {shifts.map((shift) => <OwnerShiftRows key={shift.id} shift={shift} onOpenShift={onOpenShift} onOpenMovement={onOpenMovement} onDeleteShift={onDeleteShift} onDeleteMovement={onDeleteMovement} />)}
@@ -899,7 +891,7 @@ function MovementReviewTable({ title, total, status, movements, emptyText, onOpe
         <div className="table-wrap">
           <table>
             <thead>
-              <tr><th>Turno</th><th>Tipo</th><th>Detalle</th><th>Monto</th><th>Registra</th><th></th></tr>
+              <tr><th>Jornada</th><th>Tipo</th><th>Detalle</th><th>Monto</th><th>Registra</th><th></th></tr>
             </thead>
             <tbody>
               {movements.map((movement) => (
@@ -1172,7 +1164,7 @@ function ReportsView({ activeDate, shifts = [] }) {
     const payload = await readJson(response);
 
     if (!response.ok) {
-      throw new Error(payload?.error || 'No se pudieron cargar materiales y jornadas.');
+      throw new Error(payload?.error || 'No se pudieron cargar materiales.');
     }
 
     return payload;
@@ -1340,8 +1332,7 @@ function ReportsView({ activeDate, shifts = [] }) {
 
   function normalizeReportJornada(value) {
     const text = normalizeText(value);
-    if (text.includes('diurna') || text === '1') return 'DIURNA';
-    if (text.includes('noctur') || text.includes('noche') || text === '2') return 'NOCTURNA';
+    if (text.includes('diurna') || text.includes('dia') || text === '1') return 'DIURNA';
     return '';
   }
 
@@ -1443,12 +1434,7 @@ function ReportsView({ activeDate, shifts = [] }) {
               {options.materiales.map((material) => <option key={material} value={material}>{material}</option>)}
             </select>
           </label>
-          <label className="span-field-3">Jornada
-            <select value={filters.jornada} onChange={(event) => updateFilter('jornada', event.target.value)}>
-              <option value="">Todas las jornadas</option>
-              {options.jornadas.map((jornada) => <option key={jornada} value={jornada}>{jornada}</option>)}
-            </select>
-          </label>
+          <label className="span-field-3">Jornada<input value="DIURNA" readOnly /></label>
           <div className="span-field-12 report-actions">
             <button className="primary" disabled={loading}>{loading ? 'Generando...' : 'Generar reporte'}</button>
             {report && <button type="button" className="secondary" onClick={() => exportReportCsv(report)}>Exportar CSV</button>}
@@ -1457,7 +1443,7 @@ function ReportsView({ activeDate, shifts = [] }) {
         {error && <p className="error report-error">{error}</p>}
       </div>
 
-      {!report && <div className="panel span-12"><Empty text="Elige un rango y genera un reporte para ver totales por material y jornada." /></div>}
+      {!report && <div className="panel span-12"><Empty text="Elige un rango y genera un reporte para ver totales por material." /></div>}
 
       {report && (
         <>
@@ -1466,12 +1452,7 @@ function ReportsView({ activeDate, shifts = [] }) {
           <Metric title="Materiales" value={Object.keys(report.porMaterial || {}).length} note="Con compras en el rango" />
           <Metric title="Generado" value={timeText(report.generadoEn)} note={`${dateText(report.filtros.desde)} a ${dateText(report.filtros.hasta)}`} />
 
-          <div className="panel span-6">
-            <div className="section-title"><h3>Por material y jornada</h3></div>
-            <ReportSummaryTable rows={Object.values(report.porMaterialJornada || {})} columns={['material', 'jornada']} />
-          </div>
-
-          <div className="panel span-6">
+          <div className="panel span-12">
             <div className="section-title"><h3>Por material</h3></div>
             <ReportSummaryTable rows={Object.values(report.porMaterial || {})} columns={['nombre']} />
           </div>
@@ -1553,7 +1534,7 @@ function SalesReportPanel({ shifts, activeDate }) {
           </div>
           <div className="table-wrap">
             <table>
-              <thead><tr><th>Fecha</th><th>Turno</th><th>Detalle</th><th>Monto</th></tr></thead>
+              <thead><tr><th>Fecha</th><th>Jornada</th><th>Detalle</th><th>Monto</th></tr></thead>
               <tbody>
                 {sales.map((sale) => (
                   <tr key={sale.id}>
@@ -1778,7 +1759,7 @@ function MaterialsAuditView({ compras, activeDate, savedAudits = [], onSaveAudit
             </tbody>
           </table>
         </div>
-        <p className="hint">Metales no ferrosos: (inventario kg + recuperado kg) x 2.2 x 1.10. Otros materiales: (inventario + recuperado) x 1.10.</p>
+        <p className="hint">Metales no ferrosos: (inventario kg + recuperado kg) x 2.2. Otros materiales: inventario + recuperado. Sin descuento de bascula.</p>
         <div className="report-actions audit-actions">
           <button className="primary" type="button" onClick={saveCurrentAudit}>Guardar arqueo</button>
           <span className="hint">Se guardan materiales, teorico, recolector, faltante o sobrante para revisarlo despues.</span>
@@ -2159,12 +2140,12 @@ function ShiftModal({ form, ownerUnlocked, shifts, compras, onClose, onChange, o
     <div className="modal-backdrop">
       <form className="modal" onSubmit={(event) => { event.preventDefault(); onSubmit(form); }}>
         <div className="modal-head">
-          <h3>Cierre de turno</h3>
+          <h3>Cierre de caja</h3>
           <button type="button" className="icon-btn" onClick={onClose}>x</button>
         </div>
         <div className="form-grid">
           <label className="span-field-3">Fecha<input type="date" value={form.date} readOnly={form.lockShift} onChange={(event) => setField('date', event.target.value)} required /></label>
-          <label className="span-field-3">Turno
+          <label className="span-field-3">Jornada
             {form.lockShift ? (
               <input value={shiftShortName(form.shiftName)} readOnly />
             ) : (
@@ -2172,15 +2153,15 @@ function ShiftModal({ form, ownerUnlocked, shifts, compras, onClose, onChange, o
             )}
           </label>
           <label className="span-field-3">Empleado<input value={form.employeeName} onChange={(event) => setField('employeeName', event.target.value)} placeholder="Nombre" /></label>
-          <label className="span-field-3">Saldo inicial recibido<input type="number" inputMode="decimal" min="0" step="0.01" value={numberInputValue(form.openingCash)} readOnly={!ownerUnlocked} onChange={(event) => setField('openingCash', event.target.value)} /><small>{ownerUnlocked ? `Puedes corregirlo. Automatico sugerido: ${money.format(automatic)}.` : `Viene del efectivo dejado por el turno anterior: ${money.format(automatic)}.`}</small></label>
+          <label className="span-field-3">Saldo inicial recibido<input type="number" inputMode="decimal" min="0" step="0.01" value={numberInputValue(form.openingCash)} readOnly={!ownerUnlocked} onChange={(event) => setField('openingCash', event.target.value)} /><small>{ownerUnlocked ? `Puedes corregirlo. Automatico sugerido: ${money.format(automatic)}.` : `Viene del efectivo dejado por el dia anterior: ${money.format(automatic)}.`}</small></label>
           {ownerUnlocked && (
-            <label className="span-field-4">Total compras reciclaje<input type="number" inputMode="decimal" min="0" step="0.01" value={numberInputValue(form.purchaseTotal)} onChange={(event) => setField('purchaseTotal', event.target.value)} required /><small>{syncedPurchases > 0 ? `Sincronizado para este turno: ${money.format(syncedPurchases)}.` : 'Sin compras sincronizadas para este turno.'}</small></label>
+            <label className="span-field-4">Total compras reciclaje<input type="number" inputMode="decimal" min="0" step="0.01" value={numberInputValue(form.purchaseTotal)} onChange={(event) => setField('purchaseTotal', event.target.value)} required /><small>{syncedPurchases > 0 ? `Sincronizado para la jornada: ${money.format(syncedPurchases)}.` : 'Sin compras sincronizadas para esta jornada.'}</small></label>
           )}
-          <label className={ownerUnlocked ? 'span-field-4' : 'span-field-6'}>Estado del turno<input value="Cierre de caja" readOnly /></label>
+          <label className={ownerUnlocked ? 'span-field-4' : 'span-field-6'}>Estado<input value="Cierre de caja" readOnly /></label>
           <label className={ownerUnlocked ? 'span-field-4' : 'span-field-6'}>Notas del cierre<input value={form.notes} onChange={(event) => setField('notes', event.target.value)} placeholder="Observacion final" /></label>
         </div>
         <div className="section-title denom-title">
-          <h3>Efectivo que deja para el siguiente turno</h3>
+          <h3>Efectivo que deja para el dia siguiente</h3>
           <span className="status info">{denomTotal}</span>
         </div>
         <div className="denoms">
@@ -2230,7 +2211,7 @@ function MovementModal({ form, employees = [], onClose, onChange, onSubmit }) {
         </div>
         <div className="form-grid">
           <label className="span-field-3">Fecha<input type="date" value={form.date} readOnly={form.lockShift} onChange={(event) => setField('date', event.target.value)} required /></label>
-          <label className="span-field-3">Turno
+          <label className="span-field-3">Jornada
             {form.lockShift ? (
               <input value={shiftShortName(form.shiftName)} readOnly />
             ) : (
@@ -2340,8 +2321,8 @@ function readSession() {
 function readActiveCashBox() {
   try {
     const value = JSON.parse(localStorage.getItem(ACTIVE_CASH_BOX_KEY));
-    if (!value?.date || !shiftOptions.includes(value?.shiftName)) return null;
-    return { date: value.date, shiftName: value.shiftName };
+    if (!value?.date) return null;
+    return { date: value.date, shiftName: normalizeShiftName(value.shiftName) };
   } catch {
     return null;
   }
@@ -2353,11 +2334,22 @@ function normalizeData(value) {
     ...value,
     ownerPin: value?.ownerPin || value?.pin || defaultData.ownerPin,
     employeePin: value?.employeePin || defaultData.employeePin,
-    shifts: Array.isArray(value?.shifts) ? value.shifts : [],
+    shifts: Array.isArray(value?.shifts) ? value.shifts.map(normalizeShift) : [],
     payrollAdjustments: Array.isArray(value?.payrollAdjustments) ? value.payrollAdjustments : [],
     employees: Array.isArray(value?.employees) ? value.employees.map(normalizeEmployee).filter((employee) => employee.fullName) : [],
     materialAudits: Array.isArray(value?.materialAudits) ? value.materialAudits.map(normalizeMaterialAudit).filter((audit) => audit.rows.length) : []
   };
+}
+
+function normalizeShift(shift = {}) {
+  return {
+    ...shift,
+    shiftName: normalizeShiftName(shift.shiftName)
+  };
+}
+
+function normalizeShiftName(_shiftName) {
+  return DAY_SHIFT;
 }
 
 function normalizeCompras(value, fecha) {
@@ -2426,7 +2418,7 @@ function openShiftForm(shifts, activeDate, id, ownerUnlocked, fallbackName, comp
       ? findShift(shifts, activeDate, forcedShiftName)
       : null;
   const date = shift?.date || activeDate;
-  const shiftName = shift?.shiftName || forcedShiftName || 'Turno dia';
+  const shiftName = normalizeShiftName(shift?.shiftName || forcedShiftName);
   const syncedPurchases = purchaseTotalForShift(compras, shiftName);
   return {
     id: shift?.id || '',
@@ -2449,7 +2441,7 @@ function openMovementForm(shifts, activeDate, id, movementType, fallbackName, fo
   return {
     id: movement?.id || '',
     date: movement?.date || activeDate,
-    shiftName: movement?.shiftName || forcedShiftName || 'Turno dia',
+    shiftName: normalizeShiftName(movement?.shiftName || forcedShiftName),
     lockShift,
     type: movement?.type || movementType || 'gasto',
     incomeType: movement?.incomeType || 'general',
@@ -2556,7 +2548,8 @@ function dayShifts(shifts, date) {
 }
 
 function findShift(shifts, date, shiftName) {
-  return shifts.find((shift) => shift.date === date && shift.shiftName === shiftName);
+  const normalizedShift = normalizeShiftName(shiftName);
+  return shifts.find((shift) => shift.date === date && normalizeShiftName(shift.shiftName) === normalizedShift);
 }
 
 function previousDate(date) {
@@ -2572,8 +2565,7 @@ function nextDate(date) {
 }
 
 function previousShift(shifts, date, shiftName) {
-  if (shiftName === 'Turno noche') return findShift(shifts, date, 'Turno dia');
-  return findShift(shifts, previousDate(date), 'Turno noche');
+  return findShift(shifts, previousDate(date), normalizeShiftName(shiftName));
 }
 
 function autoOpeningCash(shifts, date, shiftName) {
@@ -2581,8 +2573,7 @@ function autoOpeningCash(shifts, date, shiftName) {
 }
 
 function nextShiftKey(date, shiftName) {
-  if (shiftName === 'Turno dia') return { date, shiftName: 'Turno noche' };
-  return { date: nextDate(date), shiftName: 'Turno dia' };
+  return { date: nextDate(date), shiftName: normalizeShiftName(shiftName) };
 }
 
 function cascadeOpeningCash(shifts, changedShift) {
@@ -2596,6 +2587,7 @@ function cascadeOpeningCash(shifts, changedShift) {
 }
 
 function purchaseTotalForShift(compras, shiftName) {
+  if (num(compras?.totalDiario) > 0) return num(compras.totalDiario);
   const entries = Object.values(compras?.porJornada || {});
   const matched = entries.filter((entry) => jornadaMatchesShift(entry.jornada, shiftName));
   return matched.reduce((sum, entry) => sum + num(entry.totalSubtotal), 0);
@@ -2606,14 +2598,13 @@ function jornadaMatchesShift(jornada, shiftName) {
   const shift = normalizeText(shiftName);
 
   if (!value) return false;
-  if (shift.includes('noche')) return value.includes('noche') || value.includes('noctur') || value === '2';
   if (shift.includes('dia')) return value.includes('dia') || value.includes('diurna') || value.includes('manana') || value === '1';
 
   return value === shift;
 }
 
 function shiftShortName(shiftName) {
-  return shiftName === 'Turno noche' ? 'NOCTURNA' : 'DIURNA';
+  return 'DIURNA';
 }
 
 function movementLabel(movement) {
@@ -2691,7 +2682,7 @@ function newMaterialAuditRow() {
 function calculateMaterialAuditRow(row) {
   const base = num(row.inventoryWeight) + num(row.recoveredWeight);
   const converted = row.materialType === 'nonFerrous' ? base * 2.2 : base;
-  const expected = converted * 1.10;
+  const expected = converted;
   const reported = num(row.reportedWeight);
   return {
     ...row,
@@ -3162,7 +3153,7 @@ function downloadMaterialAuditImage({ rows = [], totals = { expected: 0, reporte
 
   ctx.fillStyle = '#66746c';
   ctx.font = '15px Arial';
-  ctx.fillText('Formula: no ferrosos = (inventario + recuperado) x 2.2 x 1.10; otros = (inventario + recuperado) x 1.10.', 44, height - 34);
+  ctx.fillText('Formula: no ferrosos = (inventario + recuperado) x 2.2; otros = inventario + recuperado. Sin descuento de bascula.', 44, height - 34);
 
   const link = document.createElement('a');
   link.href = canvas.toDataURL('image/png');
@@ -3356,7 +3347,7 @@ function downloadOwnerSummaryImage({ shifts = [], compras = defaultCompras, acti
   y += 232;
   ctx.fillStyle = '#16201a';
   ctx.font = '700 24px Arial';
-  ctx.fillText('Turnos', 44, y);
+  ctx.fillText('Jornada', 44, y);
   y += 28;
   shifts.forEach((shift) => {
     const totals = movementTotals(shift);

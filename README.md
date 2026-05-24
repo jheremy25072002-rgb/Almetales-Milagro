@@ -1,6 +1,6 @@
 # Arqueo Recicladora
 
-Web app React + Firebase Firestore para arqueo de turnos y sincronizacion de compras desde MySQL.
+Web app React + Firebase Firestore para arqueo de caja diaria y sincronizacion de compras desde MySQL.
 
 Esta copia esta preparada para servir como plantilla de una recicladora nueva. Antes de publicarla, sigue `MIGRACION_NUEVA_RECICLADORA.md` y crea Firebase, GitHub, Vercel, `.env`, credenciales Admin y conexion MySQL independientes.
 
