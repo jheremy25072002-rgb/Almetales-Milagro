@@ -76,8 +76,8 @@ npm run server
 En otra terminal:
 
 ```powershell
-Invoke-WebRequest http://localhost:4000/health
-Invoke-WebRequest http://localhost:4000/compras-hoy
+Invoke-WebRequest http://localhost:4001/health
+Invoke-WebRequest http://localhost:4001/compras-hoy
 ```
 
 Si falla MySQL, revisa credenciales y que exista la tabla `tbl_consolidado_compras` con columnas `fecha`, `material`, `peso_neto_kg`, `subtotal`, `hora_registro_salida` y `jornada`.

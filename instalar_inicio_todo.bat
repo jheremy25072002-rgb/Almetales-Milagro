@@ -2,8 +2,8 @@
 setlocal
 cd /d "%~dp0"
 
-set "SYNC_TASK=Arqueo Recicladora - Sincronizar compras"
-set "APP_TASK=Arqueo Recicladora - Abrir app"
+set "SYNC_TASK=Almetales Milagro - Sincronizar compras"
+set "APP_TASK=Almetales Milagro - Abrir app"
 set "SYNC_SCRIPT=%~dp0iniciar_sincronizacion_mysql.bat"
 set "APP_SCRIPT=%~dp0abrir_app_web.bat"
 

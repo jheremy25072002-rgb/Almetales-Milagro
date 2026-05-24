@@ -13,7 +13,7 @@ import {
 } from './comprasService.js';
 
 const app = express();
-const port = Number(process.env.PORT || 4000);
+const port = Number(process.env.PORT || 4001);
 const syncIntervalSeconds = Number(process.env.SYNC_INTERVAL_SECONDS || 60);
 const syncBackfillDays = Number(process.env.SYNC_BACKFILL_DAYS || 30);
 const syncIntervalBackfillDays = Number(process.env.SYNC_INTERVAL_BACKFILL_DAYS || 2);

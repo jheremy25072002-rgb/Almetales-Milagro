@@ -27,6 +27,11 @@ MYSQL_USER=
 MYSQL_PASSWORD=
 MYSQL_DATABASE=
 
+PORT=4001
+SYNC_INTERVAL_SECONDS=60
+SYNC_BACKFILL_DAYS=30
+SYNC_INTERVAL_BACKFILL_DAYS=2
+
 FIREBASE_PROJECT_ID=almetales-milagro
 FIRESTORE_COMPRAS_COLLECTION=compras_diarias
 GOOGLE_APPLICATION_CREDENTIALS=C:\ruta\a\almetales-milagro-admin.json
@@ -44,8 +49,8 @@ npm run server
 En otra terminal:
 
 ```powershell
-Invoke-WebRequest http://127.0.0.1:4000/health
-Invoke-WebRequest http://127.0.0.1:4000/compras-hoy
+Invoke-WebRequest http://127.0.0.1:4001/health
+Invoke-WebRequest http://127.0.0.1:4001/compras-hoy
 ```
 
 Luego revisar Firestore:
@@ -63,6 +68,7 @@ Cuando la prueba manual funcione:
 ```
 
 Eso crea una tarea de Windows para arrancar la sincronizacion al iniciar sesion.
+La tarea se llama `Almetales Milagro - Sincronizar compras` y arranca el proceso oculto en segundo plano. Usa el puerto `4001` para no chocar con la otra sincronizacion de esta PC.
 
 ## Importante
 

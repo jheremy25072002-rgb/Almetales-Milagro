@@ -1,7 +1,7 @@
 @echo off
 setlocal
 
-set "TASK_NAME=Arqueo Recicladora - Sincronizar compras"
+set "TASK_NAME=Almetales Milagro - Sincronizar compras"
 
 echo Quitando inicio automatico de sincronizacion...
 schtasks /Delete /TN "%TASK_NAME%" /F

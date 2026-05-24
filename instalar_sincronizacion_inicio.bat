@@ -2,7 +2,7 @@
 setlocal
 cd /d "%~dp0"
 
-set "TASK_NAME=Arqueo Recicladora - Sincronizar compras"
+set "TASK_NAME=Almetales Milagro - Sincronizar compras"
 set "TASK_SCRIPT=%~dp0iniciar_sincronizacion_mysql.bat"
 
 echo Instalando inicio automatico de sincronizacion...
