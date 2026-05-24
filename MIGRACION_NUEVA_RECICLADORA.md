@@ -120,7 +120,7 @@ git push -u origin main
 5. Agrega en Vercel las variables de `VERCEL_ENV_VARIABLES.txt`.
 6. No agregues credenciales MySQL ni Firebase Admin al frontend de Vercel, salvo que el backend tambien vaya a vivir en un servidor seguro separado.
 
-Para subir primero la app sin MySQL, deja `VITE_API_BASE_URL=http://localhost:4000`. El arqueo funcionara con Firestore; los reportes de compras conectados a MySQL quedan para el final.
+Para subir primero la app sin MySQL, deja `VITE_API_BASE_URL` vacia. El arqueo funcionara con Firestore; los reportes de compras conectados a MySQL quedan para el final.
 
 ## 9. Sincronizacion MySQL
 

@@ -10,7 +10,7 @@ const ARQUEO_COLLECTION = import.meta.env.VITE_ARQUEO_COLLECTION || 'arqueos';
 const ARQUEO_DOCUMENT_ID = import.meta.env.VITE_ARQUEO_DOCUMENT_ID || 'nueva-recicladora';
 const COMPRAS_COLLECTION = import.meta.env.VITE_COMPRAS_COLLECTION || 'compras_diarias';
 const DATA_REF = doc(db, ARQUEO_COLLECTION, ARQUEO_DOCUMENT_ID);
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
 const SESSION_KEY = 'arqueo-recicladora-session';
 const ACTIVE_CASH_BOX_KEY = `${ARQUEO_DOCUMENT_ID}-active-cash-box`;
 const money = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });
@@ -1151,11 +1151,12 @@ function ReportsView({ activeDate, shifts = [] }) {
   }
 
   async function fetchReportFromApi(currentFilters) {
+    const apiBaseUrl = requireApiBaseUrl();
     const params = new URLSearchParams();
     Object.entries(currentFilters).forEach(([key, value]) => {
       if (value) params.set(key, value);
     });
-    const response = await fetch(`${API_BASE_URL}/reporte-compras?${params.toString()}`);
+    const response = await fetch(`${apiBaseUrl}/reporte-compras?${params.toString()}`);
     const payload = await readJson(response);
 
     if (!response.ok) {
@@ -1166,7 +1167,8 @@ function ReportsView({ activeDate, shifts = [] }) {
   }
 
   async function fetchReportOptionsFromApi() {
-    const response = await fetch(`${API_BASE_URL}/compras-opciones`);
+    const apiBaseUrl = requireApiBaseUrl();
+    const response = await fetch(`${apiBaseUrl}/compras-opciones`);
     const payload = await readJson(response);
 
     if (!response.ok) {
@@ -2372,7 +2374,8 @@ function normalizeCompras(value, fecha) {
 }
 
 async function fetchComprasFromApi(fecha) {
-  const response = await fetch(`${API_BASE_URL}/compras?fecha=${encodeURIComponent(fecha)}`);
+  const apiBaseUrl = requireApiBaseUrl();
+  const response = await fetch(`${apiBaseUrl}/compras?fecha=${encodeURIComponent(fecha)}`);
   const payload = await readJson(response);
 
   if (!response.ok) {
@@ -2388,6 +2391,14 @@ async function readJson(response) {
   } catch (_error) {
     return null;
   }
+}
+
+function requireApiBaseUrl() {
+  if (!API_BASE_URL) {
+    throw new Error('La API de MySQL todavia no esta configurada.');
+  }
+
+  return API_BASE_URL.replace(/\/$/, '');
 }
 
 function createOpenShift(shifts, date, shiftName, employeeName, compras = defaultCompras) {
@@ -2706,7 +2717,8 @@ async function fetchMaterialInventoryLookup(filters = {}) {
   if (material) params.set('material', material);
 
   try {
-    const response = await fetch(`${API_BASE_URL}/reporte-compras?${params.toString()}`);
+    const apiBaseUrl = requireApiBaseUrl();
+    const response = await fetch(`${apiBaseUrl}/reporte-compras?${params.toString()}`);
     const payload = await readJson(response);
     if (!response.ok) throw new Error(payload?.error || 'No se pudo consultar desde la API.');
     return payload;
