@@ -1,0 +1,25 @@
+{
+  "name": "arqueo-recicladora",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node ./node_modules/vite/bin/vite.js --host 0.0.0.0",
+    "server": "node backend/server.js",
+    "sync:compras": "node backend/sync-once.js",
+    "build": "node ./node_modules/vite/bin/vite.js build",
+    "preview": "node ./node_modules/vite/bin/vite.js preview --host 0.0.0.0"
+  },
+  "dependencies": {
+    "@vitejs/plugin-react": "^5.0.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "firebase": "^12.0.0",
+    "firebase-admin": "^10.3.0",
+    "mysql2": "^3.12.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "vite": "^7.0.0"
+  }
+}
