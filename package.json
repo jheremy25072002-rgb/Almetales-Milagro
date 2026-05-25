@@ -5,8 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "node ./node_modules/vite/bin/vite.js --host 0.0.0.0",
-    "server": "node backend/server.js",
-    "sync:compras": "node backend/sync-once.js",
+    "server": "node --use-system-ca backend/server.js",
+    "sync:compras": "node --use-system-ca backend/sync-once.js",
     "build": "node ./node_modules/vite/bin/vite.js build",
     "preview": "node ./node_modules/vite/bin/vite.js preview --host 0.0.0.0"
   },

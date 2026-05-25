@@ -37,3 +37,4 @@ if (!admin.apps.length) {
 }
 
 export const firestore = admin.firestore();
+firestore.settings({ preferRest: true });
