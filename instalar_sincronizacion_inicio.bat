@@ -3,10 +3,10 @@ setlocal
 cd /d "%~dp0"
 
 set "TASK_NAME=Almetales Milagro - Sincronizar compras"
-set "TASK_SCRIPT=%~dp0iniciar_sincronizacion_mysql.bat"
+set "TASK_SCRIPT=%~dp0sincronizacion_mysql_oculta.ps1"
 
 echo Instalando inicio automatico de sincronizacion...
-schtasks /Create /TN "%TASK_NAME%" /SC ONLOGON /RL LIMITED /F /TR "\"%TASK_SCRIPT%\""
+schtasks /Create /TN "%TASK_NAME%" /SC ONLOGON /RL LIMITED /F /TR "powershell.exe -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File \"%TASK_SCRIPT%\""
 if errorlevel 1 (
   echo.
   echo No se pudo crear la tarea automatica.
