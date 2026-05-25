@@ -114,7 +114,7 @@ export async function generarReporteCompras(filters = {}) {
   const desde = normalizeDateTime(filters.desde);
   const hasta = normalizeDateTime(filters.hasta);
   const material = cleanText(filters.material);
-  const jornada = normalizeJornada(filters.jornada);
+  const jornada = 'DIURNA';
 
   if (!desde || !hasta) {
     throw new Error('Debes enviar desde y hasta con formato YYYY-MM-DDTHH:mm o YYYY-MM-DD HH:mm:ss.');
@@ -126,11 +126,6 @@ export async function generarReporteCompras(filters = {}) {
   if (material) {
     where.push('UPPER(TRIM(material)) = UPPER(TRIM(?))');
     params.push(material);
-  }
-
-  if (jornada) {
-    where.push('UPPER(TRIM(jornada)) = UPPER(TRIM(?))');
-    params.push(jornada);
   }
 
   const [rows] = await pool.execute(
